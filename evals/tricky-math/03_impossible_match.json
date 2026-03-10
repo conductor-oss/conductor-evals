@@ -1,0 +1,13 @@
+{
+  "id": "impossible_match",
+  "name": "Deliberately wrong expected answer",
+  "description": "Asks for 100+200 but expects 999 — guaranteed to fail",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 100 + 200? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "999"
+  },
+  "match_mode": "exact",
+  "tags": ["math", "fail"]
+}

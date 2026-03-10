@@ -1,0 +1,10 @@
+{
+  "clusters": [
+    {
+      "name": "local",
+      "url": "http://localhost:8080",
+      "keyId": "api_key_user_03",
+      "keySecret": "api_key_user_03"
+    }
+  ]
+}

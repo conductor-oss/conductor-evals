@@ -1,0 +1,13 @@
+{
+  "id": "add_decimals",
+  "name": "Add decimal numbers",
+  "description": "Addition with decimals: 3.14 + 2.86",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 3.14 + 2.86? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "6"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "decimals"]
+}

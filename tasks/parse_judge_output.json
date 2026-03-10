@@ -1,0 +1,12 @@
+{
+  "name": "parse_judge_output",
+  "retryCount": 1,
+  "timeoutSeconds": 30,
+  "inputKeys": ["judge_result"],
+  "outputKeys": ["score", "raw_score", "passed", "reasoning"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 1,
+  "responseTimeoutSeconds": 15,
+  "ownerEmail": "user3@orkes.io"
+}

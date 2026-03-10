@@ -1,0 +1,12 @@
+{
+  "name": "score_text_match",
+  "retryCount": 0,
+  "timeoutSeconds": 30,
+  "inputKeys": ["agent_output", "expected", "match_mode"],
+  "outputKeys": ["score", "passed", "details"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "responseTimeoutSeconds": 15,
+  "ownerEmail": "user3@orkes.io"
+}

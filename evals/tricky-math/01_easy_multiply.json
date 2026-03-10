@@ -1,0 +1,13 @@
+{
+  "id": "easy_multiply",
+  "name": "Simple multiplication",
+  "description": "Basic multiplication: 6 * 7 — should pass easily",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 6 * 7? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "42"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "easy"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "prepare_fork_inputs",
+  "retryCount": 1,
+  "timeoutSeconds": 60,
+  "inputKeys": ["eval_cases", "models", "run_id"],
+  "outputKeys": ["dynamicTasks", "dynamicTasksInputs"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "responseTimeoutSeconds": 30,
+  "ownerEmail": "user3@orkes.io"
+}

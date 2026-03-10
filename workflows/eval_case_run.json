@@ -1,0 +1,194 @@
+{
+  "name": "eval_case_run",
+  "version": 1,
+  "schemaVersion": 2,
+  "ownerEmail": "user3@orkes.io",
+  "timeoutPolicy": "TIME_OUT_WF",
+  "timeoutSeconds": 600,
+  "inputParameters": ["eval_case", "model", "run_id"],
+  "tasks": [
+    {
+      "name": "route_agent",
+      "taskReferenceName": "route_agent",
+      "type": "SWITCH",
+      "evaluatorType": "value-param",
+      "expression": "agent_type",
+      "inputParameters": {
+        "agent_type": "${workflow.input.eval_case.agent_type}"
+      },
+      "decisionCases": {
+        "direct_llm": [
+          {
+            "name": "llm_call",
+            "taskReferenceName": "llm_call",
+            "type": "LLM_CHAT_COMPLETE",
+            "inputParameters": {
+              "llmProvider": "${workflow.input.model.provider}",
+              "model": "${workflow.input.model.model_id}",
+              "instructions": "${workflow.input.eval_case.system_prompt}",
+              "messages": [
+                {
+                  "role": "user",
+                  "message": "${workflow.input.eval_case.prompt}"
+                }
+              ],
+              "temperature": "${workflow.input.model.params.temperature}",
+              "maxTokens": "${workflow.input.model.params.max_tokens}"
+            }
+          }
+        ],
+        "tool_use_agent": [
+          {
+            "name": "llm_call_with_tools",
+            "taskReferenceName": "llm_call_with_tools",
+            "type": "LLM_CHAT_COMPLETE",
+            "inputParameters": {
+              "llmProvider": "${workflow.input.model.provider}",
+              "model": "${workflow.input.model.model_id}",
+              "instructions": "${workflow.input.eval_case.system_prompt}",
+              "messages": [
+                {
+                  "role": "user",
+                  "message": "${workflow.input.eval_case.prompt}"
+                }
+              ],
+              "temperature": "${workflow.input.model.params.temperature}",
+              "maxTokens": "${workflow.input.model.params.max_tokens}",
+              "tools": "${workflow.input.eval_case.tools}"
+            }
+          }
+        ],
+        "claude_code_agent": [
+          {
+            "name": "execute_agent",
+            "taskReferenceName": "execute_agent_claude_code",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "eval_case": "${workflow.input.eval_case}",
+              "model": "${workflow.input.model}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "agent_unknown",
+          "taskReferenceName": "agent_unknown",
+          "type": "TERMINATE",
+          "inputParameters": {
+            "terminationStatus": "FAILED",
+            "terminationReason": "Unknown agent_type: ${workflow.input.eval_case.agent_type}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "normalize_agent_output",
+      "taskReferenceName": "normalize_agent_output",
+      "type": "INLINE",
+      "inputParameters": {
+        "evaluatorType": "graaljs",
+        "expression": "(function() { var llm = $.llm_call_output; var tools = $.llm_call_with_tools_output; var cc = $.execute_agent_claude_code_output; if (llm && (llm.result !== null && llm.result !== undefined)) { return { response: llm.result, tool_calls: [], token_usage: { input_tokens: llm.promptTokens || 0, output_tokens: llm.completionTokens || 0 }, latency_ms: 0 }; } if (tools && tools.finishReason) { var tc = (tools.toolCalls || []).map(function(c) { var args = c.inputParameters || {}; delete args.method; delete args.integrationName; return { tool_name: c.name, args: args }; }); return { response: tools.result || '', tool_calls: tc, token_usage: { input_tokens: tools.promptTokens || 0, output_tokens: tools.completionTokens || 0 }, latency_ms: 0 }; } if (cc && cc.response) { return cc; } return { response: '', tool_calls: [], token_usage: {}, latency_ms: 0 }; })()",
+        "llm_call_output": "${llm_call.output}",
+        "llm_call_with_tools_output": "${llm_call_with_tools.output}",
+        "execute_agent_claude_code_output": "${execute_agent_claude_code.output}"
+      }
+    },
+    {
+      "name": "route_scorer",
+      "taskReferenceName": "route_scorer",
+      "type": "SWITCH",
+      "evaluatorType": "value-param",
+      "expression": "scoring_method",
+      "inputParameters": {
+        "scoring_method": "${workflow.input.eval_case.scoring_method}"
+      },
+      "decisionCases": {
+        "text_match": [
+          {
+            "name": "score_text_match",
+            "taskReferenceName": "score_text_match",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "agent_output": "${normalize_agent_output.output.result.response}",
+              "expected": "${workflow.input.eval_case.expected}",
+              "match_mode": "${workflow.input.eval_case.match_mode}"
+            }
+          }
+        ],
+        "llm_judge": [
+          {
+            "name": "llm_judge",
+            "taskReferenceName": "llm_judge",
+            "type": "LLM_CHAT_COMPLETE",
+            "inputParameters": {
+              "llmProvider": "${workflow.input.eval_case.judge_provider}",
+              "model": "${workflow.input.eval_case.judge_model}",
+              "instructions": "You are an expert evaluator. Score the AI assistant's response based on the rubric provided. You MUST respond with ONLY a JSON object in this exact format: {\"score\": <number 1-5>, \"reasoning\": \"<brief explanation>\"}\nDo not include any other text.",
+              "messages": [
+                {
+                  "role": "user",
+                  "message": "## Original Prompt\n${workflow.input.eval_case.prompt}\n\n## AI Response\n${normalize_agent_output.output.result.response}\n\n## Scoring Rubric\n${workflow.input.eval_case.rubric}\n\nScore the response 1-5 based on the rubric. Respond with JSON only."
+                }
+              ],
+              "temperature": 0,
+              "maxTokens": 256
+            }
+          },
+          {
+            "name": "parse_judge_output",
+            "taskReferenceName": "parse_judge_output",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "judge_result": "${llm_judge.output.result}"
+            }
+          }
+        ],
+        "tool_trace": [
+          {
+            "name": "score_tool_trace",
+            "taskReferenceName": "score_tool_trace",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "tool_calls": "${normalize_agent_output.output.result.tool_calls}",
+              "expected_trace": "${workflow.input.eval_case.expected_trace}",
+              "strict_order": "${workflow.input.eval_case.strict_order}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "score_unknown",
+          "taskReferenceName": "score_unknown",
+          "type": "TERMINATE",
+          "inputParameters": {
+            "terminationStatus": "FAILED",
+            "terminationReason": "Unknown scoring method: ${workflow.input.eval_case.scoring_method}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "record_result",
+      "taskReferenceName": "record_result",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "case_id": "${workflow.input.eval_case.id}",
+        "model": "${workflow.input.model}",
+        "run_id": "${workflow.input.run_id}",
+        "agent_output": "${normalize_agent_output.output.result}",
+        "text_match_result": "${score_text_match.output}",
+        "llm_judge_result": "${parse_judge_output.output}",
+        "tool_trace_result": "${score_tool_trace.output}",
+        "scoring_method": "${workflow.input.eval_case.scoring_method}"
+      }
+    }
+  ],
+  "outputParameters": {
+    "case_id": "${workflow.input.eval_case.id}",
+    "model": "${workflow.input.model.model_id}",
+    "score": "${record_result.output.score}",
+    "result": "${record_result.output}"
+  }
+}

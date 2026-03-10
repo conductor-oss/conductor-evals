@@ -1,0 +1,12 @@
+{
+  "name": "aggregate_results",
+  "retryCount": 1,
+  "timeoutSeconds": 60,
+  "inputKeys": ["results", "suite_name", "models", "run_id"],
+  "outputKeys": ["summary", "results", "total_cases"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "responseTimeoutSeconds": 30,
+  "ownerEmail": "user3@orkes.io"
+}

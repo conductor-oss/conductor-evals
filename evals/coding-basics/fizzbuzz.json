@@ -1,0 +1,14 @@
+{
+  "id": "fizzbuzz",
+  "name": "FizzBuzz output",
+  "description": "Ask the model to produce FizzBuzz output for numbers 1-15",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "Write the FizzBuzz output for numbers 1 through 15, one per line. Rules: multiples of 3 print 'Fizz', multiples of 5 print 'Buzz', multiples of both print 'FizzBuzz', otherwise print the number. Return only the output, nothing else.",
+  "expected": {
+    "values": ["FizzBuzz", "Fizz", "Buzz", "14"]
+  },
+  "match_mode": "contains_all",
+  "tags": ["basic", "logic"],
+  "timeout_seconds": 30
+}

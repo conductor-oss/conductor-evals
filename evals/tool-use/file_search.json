@@ -1,0 +1,41 @@
+{
+  "id": "file_search",
+  "name": "Search for a function definition",
+  "description": "Tests ability to use search tools to find a function definition",
+  "agent_type": "tool_use_agent",
+  "scoring_method": "tool_trace",
+  "prompt": "Find the definition of the function 'calculate_tax' in the project. What file is it in and what does it do?",
+  "tools": [
+    {
+      "name": "grep_search",
+      "type": "SIMPLE",
+      "description": "Search file contents with a pattern",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": { "type": "string", "description": "Search pattern" },
+          "path": { "type": "string", "description": "Directory to search in" }
+        },
+        "required": ["pattern"]
+      }
+    },
+    {
+      "name": "read_file",
+      "type": "SIMPLE",
+      "description": "Read a file's contents",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "File path to read" }
+        },
+        "required": ["path"]
+      }
+    }
+  ],
+  "expected_trace": [
+    { "tool_name": "grep_search", "args_contain": { "pattern": "calculate_tax" } }
+  ],
+  "strict_order": false,
+  "tags": ["tool-use", "search"],
+  "timeout_seconds": 120
+}

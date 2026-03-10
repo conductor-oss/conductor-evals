@@ -1,0 +1,53 @@
+{
+  "name": "eval_suite",
+  "version": 2,
+  "schemaVersion": 2,
+  "ownerEmail": "user3@orkes.io",
+  "timeoutPolicy": "TIME_OUT_WF",
+  "timeoutSeconds": 7200,
+  "inputParameters": ["suite_name", "eval_cases", "models", "run_id", "options"],
+  "tasks": [
+    {
+      "name": "prepare_fork_inputs",
+      "taskReferenceName": "prepare_fork_inputs",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "eval_cases": "${workflow.input.eval_cases}",
+        "models": "${workflow.input.models}",
+        "run_id": "${workflow.input.run_id}"
+      }
+    },
+    {
+      "name": "dynamic_fan_out",
+      "taskReferenceName": "dynamic_fan_out",
+      "type": "FORK_JOIN_DYNAMIC",
+      "inputParameters": {
+        "dynamicTasks": "${prepare_fork_inputs.output.dynamicTasks}",
+        "dynamicTasksInputs": "${prepare_fork_inputs.output.dynamicTasksInputs}"
+      },
+      "dynamicForkTasksParam": "dynamicTasks",
+      "dynamicForkTasksInputParamName": "dynamicTasksInputs"
+    },
+    {
+      "name": "join_eval_runs",
+      "taskReferenceName": "join_eval_runs",
+      "type": "JOIN"
+    },
+    {
+      "name": "aggregate_results",
+      "taskReferenceName": "aggregate_results",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "results": "${join_eval_runs.output}",
+        "suite_name": "${workflow.input.suite_name}",
+        "models": "${workflow.input.models}",
+        "run_id": "${workflow.input.run_id}"
+      }
+    }
+  ],
+  "outputParameters": {
+    "summary": "${aggregate_results.output.summary}",
+    "results": "${aggregate_results.output.results}",
+    "run_id": "${workflow.input.run_id}"
+  }
+}

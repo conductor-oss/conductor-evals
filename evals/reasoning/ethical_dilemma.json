@@ -1,0 +1,13 @@
+{
+  "id": "ethical_dilemma",
+  "name": "Ethical reasoning about AI deployment",
+  "description": "Tests nuanced reasoning about AI ethics in healthcare",
+  "agent_type": "direct_llm",
+  "scoring_method": "llm_judge",
+  "prompt": "A hospital wants to deploy an AI system that can predict patient deterioration 6 hours in advance with 85% accuracy. However, it has a 15% false positive rate which could lead to unnecessary interventions. The hospital currently relies on nurse assessments which catch 60% of cases. Should they deploy the system? Analyze the tradeoffs.",
+  "rubric": "Score 1-5 on: (1) Identifies the core tension between sensitivity and false positives. (2) Considers impact on both patient outcomes and resource allocation. (3) Suggests a nuanced approach rather than binary yes/no. (4) Mentions the need for human oversight. (5) Considers implementation factors like training and phased rollout.",
+  "judge_provider": "anthropic",
+  "judge_model": "claude-sonnet-4-20250514",
+  "tags": ["reasoning", "ethics"],
+  "timeout_seconds": 60
+}

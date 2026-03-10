@@ -1,0 +1,13 @@
+{
+  "id": "add_simple",
+  "name": "Add two small numbers",
+  "description": "Basic addition: 23 + 47",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 23 + 47? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "70"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "basic"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "score_tool_trace",
+  "retryCount": 0,
+  "timeoutSeconds": 30,
+  "inputKeys": ["tool_calls", "expected_trace", "strict_order"],
+  "outputKeys": ["score", "passed", "missing", "extra", "details"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "responseTimeoutSeconds": 15,
+  "ownerEmail": "user3@orkes.io"
+}

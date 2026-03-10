@@ -1,0 +1,12 @@
+{
+  "name": "record_result",
+  "retryCount": 0,
+  "timeoutSeconds": 30,
+  "inputKeys": ["case_id", "model", "run_id", "agent_output", "score", "scoring_details"],
+  "outputKeys": ["case_id", "model_id", "provider", "run_id", "score", "passed"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "responseTimeoutSeconds": 15,
+  "ownerEmail": "user3@orkes.io"
+}

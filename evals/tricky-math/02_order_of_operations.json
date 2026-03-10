@@ -1,0 +1,13 @@
+{
+  "id": "order_of_operations",
+  "name": "Order of operations trick",
+  "description": "8 / 2(2+2) — common internet debate, expecting 16 but models sometimes say 1",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 8 ÷ 2(2+2)? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "16"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "tricky"]
+}

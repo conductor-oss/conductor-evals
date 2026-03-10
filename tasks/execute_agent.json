@@ -1,0 +1,13 @@
+{
+  "name": "execute_agent",
+  "description": "Execute agent for tool_use_agent (mock tool loop) and claude_code_agent (subprocess) only. direct_llm uses LLM_CHAT_COMPLETE system task.",
+  "retryCount": 2,
+  "timeoutSeconds": 300,
+  "inputKeys": ["eval_case", "model"],
+  "outputKeys": ["response", "tool_calls", "token_usage", "latency_ms"],
+  "timeoutPolicy": "TIME_OUT_WF",
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 10,
+  "responseTimeoutSeconds": 120,
+  "ownerEmail": "user3@orkes.io"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "add_large",
+  "name": "Add two large numbers",
+  "description": "Addition with larger numbers: 98764 + 13579",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 98764 + 13579? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "112343"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "basic"]
+}

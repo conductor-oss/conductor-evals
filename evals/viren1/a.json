@@ -1,0 +1,8 @@
+{
+  "id": "a",
+  "prompt": "add 1 and 2",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "match_mode": "contains_all",
+  "expected": 3
+}

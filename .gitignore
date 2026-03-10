@@ -1,0 +1,21 @@
+config/orkes-config.json
+__pycache__/
+*.pyc
+.env
+.DS_Store
+/.idea
+c123.db
+c123.db-shm
+c123.db-wal
+config/.env.example
+
+# Eval UI
+evals.db
+evals.db-shm
+evals.db-wal
+ui/node_modules/
+ui/dist/server/
+# ui/dist/client/ is tracked — bundled with the PyPI package
+/conductor_evals.egg-info
+/dist/
+/build/

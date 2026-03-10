@@ -1,0 +1,14 @@
+{
+  "id": "string_reverse",
+  "name": "Reverse a string",
+  "description": "Ask the model to reverse a given string character by character",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "Reverse the following string exactly, character by character: 'Hello World'. Return only the reversed string, nothing else.",
+  "expected": {
+    "value": "dlroW olleH"
+  },
+  "match_mode": "contains",
+  "tags": ["basic", "string-manipulation"],
+  "timeout_seconds": 30
+}

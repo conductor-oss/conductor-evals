@@ -1,0 +1,13 @@
+{
+  "id": "add_negative",
+  "name": "Add with negative number",
+  "description": "Addition with a negative: 50 + (-25)",
+  "agent_type": "direct_llm",
+  "scoring_method": "text_match",
+  "prompt": "What is 50 + (-25)? Reply with only the number, nothing else.",
+  "expected": {
+    "value": "25"
+  },
+  "match_mode": "contains",
+  "tags": ["math", "negative"]
+}
