@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+  build:
+    name: Build & verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Verify package contents
+        run: |
+          echo "=== Checking critical files in sdist ==="
+          tar tzf dist/*.tar.gz | grep -q "ui/dist/client/index.html" && echo "OK: UI dist" || { echo "FAIL: UI dist missing"; exit 1; }
+          tar tzf dist/*.tar.gz | grep -q "config/model-presets.json" && echo "OK: Model presets" || { echo "FAIL: Model presets missing"; exit 1; }
+          tar tzf dist/*.tar.gz | grep -q "evals/math-basics/" && echo "OK: Eval suites" || { echo "FAIL: Eval suites missing"; exit 1; }
+          tar tzf dist/*.tar.gz | grep -q "workflows/eval_suite.json" && echo "OK: Workflows" || { echo "FAIL: Workflows missing"; exit 1; }
+          tar tzf dist/*.tar.gz | grep -q "LICENSE" && echo "OK: LICENSE" || { echo "FAIL: LICENSE missing"; exit 1; }
+
+  install-test:
+    name: Install & smoke test
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build and install
+        run: |
+          pip install build
+          python -m build --wheel
+          pip install dist/*.whl
+
+      - name: Smoke test CLI
+        working-directory: /tmp
+        run: |
+          conductor-eval suites
+          conductor-eval models
+          conductor-eval cases math-basics
+
+  # test:
+  #   name: Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - run: pip install -e ".[dev]"
+  #     - run: pytest
