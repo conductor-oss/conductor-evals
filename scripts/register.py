@@ -107,7 +107,9 @@ def check_ai_providers(cfg: dict):
                 models = resp.json()
                 print(f"  {provider}: available ({len(models)} models)")
             else:
-                print(f"  {provider}: not available (ensure {provider.upper()}_API_KEY is set on the server)")
+                print(
+                    f"  {provider}: not available (ensure {provider.upper()}_API_KEY is set on the server)"
+                )
         except Exception:
             print(f"  {provider}: could not check availability")
 

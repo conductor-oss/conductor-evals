@@ -13,15 +13,16 @@ import json
 import logging
 import os
 import shutil
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 logging.basicConfig(
@@ -43,8 +44,6 @@ TERMINAL_STATUSES = {"COMPLETED", "FAILED", "TERMINATED"}
 # ---------------------------------------------------------------------------
 # Configuration & Auth
 # ---------------------------------------------------------------------------
-
-import time
 
 
 class TokenManager:
@@ -72,14 +71,18 @@ class TokenManager:
                 json={"keyId": self._key_id, "keySecret": self._key_secret},
             )
         if resp.status_code != 200:
-            raise RuntimeError(f"Failed to obtain auth token: {resp.status_code} {resp.text}")
+            raise RuntimeError(
+                f"Failed to obtain auth token: {resp.status_code} {resp.text}"
+            )
         self._token = resp.json()["token"]
         self._expires_at = time.time() + self.DEFAULT_TTL - self.EXPIRY_BUFFER
         return self._token
 
 
 class ConductorConfig:
-    def __init__(self, url: str, key_id: str | None = None, key_secret: str | None = None):
+    def __init__(
+        self, url: str, key_id: str | None = None, key_secret: str | None = None
+    ):
         self.url = url
         self._token_manager = (
             TokenManager(url, key_id, key_secret) if key_id and key_secret else None
@@ -125,6 +128,7 @@ def get_conductor_cfg() -> ConductorConfig:
         conductor_cfg = load_conductor_config()
     return conductor_cfg
 
+
 # ---------------------------------------------------------------------------
 # Conductor API Client
 # ---------------------------------------------------------------------------
@@ -133,14 +137,20 @@ def get_conductor_cfg() -> ConductorConfig:
 async def conductor_get_execution(cfg: ConductorConfig, workflow_id: str) -> dict:
     headers = await cfg.get_headers()
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(f"{cfg.url}/api/workflow/{workflow_id}", headers=headers)
+        resp = await client.get(
+            f"{cfg.url}/api/workflow/{workflow_id}", headers=headers
+        )
     if resp.status_code != 200:
-        raise RuntimeError(f"Failed to fetch execution {workflow_id}: {resp.status_code}")
+        raise RuntimeError(
+            f"Failed to fetch execution {workflow_id}: {resp.status_code}"
+        )
     return resp.json()
 
 
 async def conductor_start_workflow(
-    cfg: ConductorConfig, workflow_input: dict, correlation_id: str | None = None,
+    cfg: ConductorConfig,
+    workflow_input: dict,
+    correlation_id: str | None = None,
 ) -> str:
     headers = await cfg.get_headers()
     body: dict[str, Any] = {"name": "eval_suite", "version": 2, "input": workflow_input}
@@ -156,9 +166,13 @@ async def conductor_start_workflow(
 async def conductor_cancel_workflow(cfg: ConductorConfig, workflow_id: str):
     headers = await cfg.get_headers()
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.delete(f"{cfg.url}/api/workflow/{workflow_id}", headers=headers)
+        resp = await client.delete(
+            f"{cfg.url}/api/workflow/{workflow_id}", headers=headers
+        )
     if resp.status_code != 200:
-        raise RuntimeError(f"Failed to cancel workflow {workflow_id}: {resp.status_code}")
+        raise RuntimeError(
+            f"Failed to cancel workflow {workflow_id}: {resp.status_code}"
+        )
 
 
 async def conductor_search_workflows(
@@ -226,7 +240,12 @@ def _epoch_ms_to_iso(epoch_ms) -> str | None:
         return epoch_ms
     try:
         from datetime import datetime, timezone
-        return datetime.fromtimestamp(epoch_ms / 1000, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+        return (
+            datetime.fromtimestamp(epoch_ms / 1000, tz=timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
     except (TypeError, ValueError, OSError):
         return str(epoch_ms)
 
@@ -235,7 +254,9 @@ def _execution_to_run(execution: dict) -> dict:
     """Map a Conductor workflow execution to a run object for the API."""
     wf_input = execution.get("input") or {}
     models_raw = wf_input.get("models", [])
-    model_names = [m.get("model_id", str(m)) if isinstance(m, dict) else str(m) for m in models_raw]
+    model_names = [
+        m.get("model_id", str(m)) if isinstance(m, dict) else str(m) for m in models_raw
+    ]
     output = execution.get("output") or {}
     return {
         "id": wf_input.get("run_id", execution.get("workflowId", "")),
@@ -263,7 +284,9 @@ def _search_result_to_run(result: dict) -> dict:
         # Can't reliably parse Java map syntax; use top-level fields instead
         wf_input = {}
     models_raw = wf_input.get("models", [])
-    model_names = [m.get("model_id", str(m)) if isinstance(m, dict) else str(m) for m in models_raw]
+    model_names = [
+        m.get("model_id", str(m)) if isinstance(m, dict) else str(m) for m in models_raw
+    ]
     return {
         "id": wf_input.get("run_id", result.get("workflowId", "")),
         "workflow_id": result.get("workflowId", ""),
@@ -300,17 +323,25 @@ def resolve_models(models: list) -> list[dict]:
     resolved = []
     for m in models:
         if isinstance(m, dict) and m.get("provider") and m.get("model_id"):
-            resolved.append({
-                "provider": m["provider"],
-                "model_id": m["model_id"],
-                "params": m.get("params", DEFAULT_PARAMS),
-            })
+            resolved.append(
+                {
+                    "provider": m["provider"],
+                    "model_id": m["model_id"],
+                    "params": m.get("params", DEFAULT_PARAMS),
+                }
+            )
         elif isinstance(m, str):
             if m in presets:
                 resolved.append(presets[m])
             elif ":" in m:
                 provider, model_id = m.split(":", 1)
-                resolved.append({"provider": provider, "model_id": model_id, "params": DEFAULT_PARAMS})
+                resolved.append(
+                    {
+                        "provider": provider,
+                        "model_id": model_id,
+                        "params": DEFAULT_PARAMS,
+                    }
+                )
             else:
                 raise ValueError(
                     f"Unknown model: {m}. Use a preset name, provider:model_id format, or a full config object."
@@ -318,6 +349,7 @@ def resolve_models(models: list) -> list[dict]:
         else:
             raise ValueError(f"Invalid model spec: {m}")
     return resolved
+
 
 # ---------------------------------------------------------------------------
 # Validation
@@ -341,10 +373,13 @@ def validate_case(case_data: dict, filename: str) -> list[str]:
     if scoring in SCORING_FIELDS:
         missing_scoring = SCORING_FIELDS[scoring] - keys
         if missing_scoring:
-            errors.append(f"{filename}: scoring_method '{scoring}' requires fields: {', '.join(missing_scoring)}")
+            errors.append(
+                f"{filename}: scoring_method '{scoring}' requires fields: {', '.join(missing_scoring)}"
+            )
     elif scoring:
         errors.append(f"{filename}: unknown scoring_method '{scoring}'")
     return errors
+
 
 # ---------------------------------------------------------------------------
 # Disk helpers for suites & cases
@@ -360,12 +395,16 @@ def _read_suites_from_disk() -> list[dict]:
         if not d.is_dir() or d.name.startswith("_"):
             continue
         cases = list(d.glob("*.json"))
-        suites.append({
-            "id": d.name,
-            "name": " ".join(w.capitalize() for w in d.name.replace("-", "_").split("_")),
-            "description": "",
-            "case_count": len(cases),
-        })
+        suites.append(
+            {
+                "id": d.name,
+                "name": " ".join(
+                    w.capitalize() for w in d.name.replace("-", "_").split("_")
+                ),
+                "description": "",
+                "case_count": len(cases),
+            }
+        )
     return suites
 
 
@@ -381,14 +420,16 @@ def _read_cases_from_disk(suite_id: str) -> list[dict]:
             case_data = json.loads(raw)
             if "id" not in case_data:
                 case_data["id"] = f.stem
-            cases.append({
-                "id": case_data.get("id", f.stem),
-                "suite_id": suite_id,
-                "prompt": case_data.get("prompt", ""),
-                "agent_type": case_data.get("agent_type", ""),
-                "scoring_method": case_data.get("scoring_method", ""),
-                "full_json": raw,
-            })
+            cases.append(
+                {
+                    "id": case_data.get("id", f.stem),
+                    "suite_id": suite_id,
+                    "prompt": case_data.get("prompt", ""),
+                    "agent_type": case_data.get("agent_type", ""),
+                    "scoring_method": case_data.get("scoring_method", ""),
+                    "full_json": raw,
+                }
+            )
         except (json.JSONDecodeError, OSError):
             pass
     return cases
@@ -407,14 +448,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+)
 
 # --- Models ---
 
 
 @app.get("/api/models")
 def api_get_models():
-    return {"presets": load_model_presets(), "providers": ["anthropic", "openai", "google_gemini"]}
+    return {
+        "presets": load_model_presets(),
+        "providers": ["anthropic", "openai", "google_gemini"],
+    }
 
 
 # --- Config ---
@@ -450,7 +496,10 @@ async def api_list_suites():
         cfg = get_conductor_cfg()
         for s in suites:
             data = await conductor_search_workflows(
-                cfg, f"workflowType IN (eval_suite) AND correlationId IN ({s['id']})", start=0, size=0,
+                cfg,
+                f"workflowType IN (eval_suite) AND correlationId IN ({s['id']})",
+                start=0,
+                size=0,
             )
             s["run_count"] = data.get("totalHits", 0)
     except Exception:
@@ -489,7 +538,10 @@ async def api_get_suite(sid: str):
     try:
         cfg = get_conductor_cfg()
         data = await conductor_search_workflows(
-            cfg, f"workflowType IN (eval_suite) AND correlationId IN ({sid})", start=0, size=10,
+            cfg,
+            f"workflowType IN (eval_suite) AND correlationId IN ({sid})",
+            start=0,
+            size=10,
         )
         recent_runs = [_search_result_to_run(r) for r in data.get("results", [])]
     except Exception:
@@ -547,7 +599,9 @@ def api_create_case(sid: str, case_data: dict):
         raise HTTPException(400, "id is required")
     errors = validate_case(case_data, case_data["id"])
     if errors:
-        raise HTTPException(400, detail={"error": "Validation failed", "details": errors})
+        raise HTTPException(
+            400, detail={"error": "Validation failed", "details": errors}
+        )
 
     suite_dir = EVALS_DIR / sid
     if not suite_dir.exists():
@@ -555,7 +609,9 @@ def api_create_case(sid: str, case_data: dict):
 
     case_file = suite_dir / f"{case_data['id']}.json"
     if case_file.exists():
-        raise HTTPException(409, f"Case '{case_data['id']}' already exists in suite '{sid}'")
+        raise HTTPException(
+            409, f"Case '{case_data['id']}' already exists in suite '{sid}'"
+        )
 
     json_str = json.dumps(case_data, indent=2) + "\n"
     case_file.write_text(json_str)
@@ -592,7 +648,9 @@ def api_update_case(sid: str, cid: str, case_data: dict):
     case_data["id"] = cid
     errors = validate_case(case_data, cid)
     if errors:
-        raise HTTPException(400, detail={"error": "Validation failed", "details": errors})
+        raise HTTPException(
+            400, detail={"error": "Validation failed", "details": errors}
+        )
 
     case_file = EVALS_DIR / sid / f"{cid}.json"
     if not case_file.exists():
@@ -644,7 +702,12 @@ async def api_create_run(request_body: dict):
     model_names = request_body.get("models")
     options = request_body.get("options", {})
 
-    if not suite_id or not model_names or not isinstance(model_names, list) or len(model_names) == 0:
+    if (
+        not suite_id
+        or not model_names
+        or not isinstance(model_names, list)
+        or len(model_names) == 0
+    ):
         raise HTTPException(400, "suite_id and models[] are required")
 
     try:
@@ -682,7 +745,9 @@ async def api_create_run(request_body: dict):
 
     cfg = get_conductor_cfg()
     try:
-        workflow_id = await conductor_start_workflow(cfg, workflow_input, correlation_id=suite_id)
+        workflow_id = await conductor_start_workflow(
+            cfg, workflow_input, correlation_id=suite_id
+        )
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -708,7 +773,10 @@ async def api_get_run(run_id: str):
     # Search by run_id in workflow input
     try:
         data = await conductor_search_workflows(
-            cfg, f"workflowType IN (eval_suite)", start=0, size=100,
+            cfg,
+            "workflowType IN (eval_suite)",
+            start=0,
+            size=100,
         )
         for r in data.get("results", []):
             if r.get("input", {}).get("run_id") == run_id:
@@ -731,7 +799,10 @@ async def api_get_run_status(run_id: str):
     if execution is None:
         try:
             data = await conductor_search_workflows(
-                cfg, f"workflowType IN (eval_suite)", start=0, size=100,
+                cfg,
+                "workflowType IN (eval_suite)",
+                start=0,
+                size=100,
             )
             for r in data.get("results", []):
                 if r.get("input", {}).get("run_id") == run_id:
@@ -769,7 +840,10 @@ async def api_get_run_results(run_id: str):
     if execution is None:
         try:
             data = await conductor_search_workflows(
-                cfg, f"workflowType IN (eval_suite)", start=0, size=100,
+                cfg,
+                "workflowType IN (eval_suite)",
+                start=0,
+                size=100,
             )
             for r in data.get("results", []):
                 if r.get("input", {}).get("run_id") == run_id:
@@ -786,20 +860,22 @@ async def api_get_run_results(run_id: str):
     # Flatten results map into a list
     results_list = []
     for r in result_data["results"].values():
-        results_list.append({
-            "run_id": result_data["run_id"],
-            "case_id": r.get("case_id", ""),
-            "model_id": r.get("model_id", ""),
-            "provider": r.get("provider", ""),
-            "score": r.get("score", 0.0),
-            "passed": 1 if r.get("passed") else 0,
-            "response_preview": r.get("response_preview", ""),
-            "latency_ms": r.get("latency_ms", 0),
-            "token_usage": json.dumps(r.get("token_usage", {})),
-            "scoring_details": json.dumps(r.get("scoring_details", {})),
-            "tool_calls": json.dumps(r.get("tool_calls", [])),
-            "sub_workflow_id": r.get("sub_workflow_id", ""),
-        })
+        results_list.append(
+            {
+                "run_id": result_data["run_id"],
+                "case_id": r.get("case_id", ""),
+                "model_id": r.get("model_id", ""),
+                "provider": r.get("provider", ""),
+                "score": r.get("score", 0.0),
+                "passed": 1 if r.get("passed") else 0,
+                "response_preview": r.get("response_preview", ""),
+                "latency_ms": r.get("latency_ms", 0),
+                "token_usage": json.dumps(r.get("token_usage", {})),
+                "scoring_details": json.dumps(r.get("scoring_details", {})),
+                "tool_calls": json.dumps(r.get("tool_calls", [])),
+                "sub_workflow_id": r.get("sub_workflow_id", ""),
+            }
+        )
     return results_list
 
 
@@ -814,7 +890,10 @@ async def api_cancel_run(run_id: str):
         # Search for it
         try:
             data = await conductor_search_workflows(
-                cfg, f"workflowType IN (eval_suite)", start=0, size=100,
+                cfg,
+                "workflowType IN (eval_suite)",
+                start=0,
+                size=100,
             )
             for r in data.get("results", []):
                 if r.get("input", {}).get("run_id") == run_id:
@@ -854,41 +933,59 @@ async def api_compare(a: str, b: str):
     for model in all_models:
         a_avg = summary_a.get(model, {}).get("avg_score", 0)
         b_avg = summary_b.get(model, {}).get("avg_score", 0)
-        model_comparison.append({
-            "model": model,
-            "run_a_avg": a_avg,
-            "run_b_avg": b_avg,
-            "delta": b_avg - a_avg,
-            "run_a_pass_rate": summary_a.get(model, {}).get("pass_rate", 0),
-            "run_b_pass_rate": summary_b.get(model, {}).get("pass_rate", 0),
-        })
+        model_comparison.append(
+            {
+                "model": model,
+                "run_a_avg": a_avg,
+                "run_b_avg": b_avg,
+                "delta": b_avg - a_avg,
+                "run_a_pass_rate": summary_a.get(model, {}).get("pass_rate", 0),
+                "run_b_pass_rate": summary_b.get(model, {}).get("pass_rate", 0),
+            }
+        )
 
     results_a = data_a["results"]
     results_b = data_b["results"]
     # Normalize keys to case_id|model_id
-    case_map_a = {f"{r.get('case_id', '')}|{r.get('model_id', '')}": r for r in results_a.values()}
-    case_map_b = {f"{r.get('case_id', '')}|{r.get('model_id', '')}": r for r in results_b.values()}
+    case_map_a = {
+        f"{r.get('case_id', '')}|{r.get('model_id', '')}": r for r in results_a.values()
+    }
+    case_map_b = {
+        f"{r.get('case_id', '')}|{r.get('model_id', '')}": r for r in results_b.values()
+    }
     all_keys = sorted(set(list(case_map_a.keys()) + list(case_map_b.keys())))
     case_comparison = []
     for key in all_keys:
         case_id, model_id = key.split("|", 1)
         ra = case_map_a.get(key, {})
         rb = case_map_b.get(key, {})
-        case_comparison.append({
-            "case_id": case_id,
-            "model_id": model_id,
-            "run_a_score": ra.get("score", 0),
-            "run_b_score": rb.get("score", 0),
-            "delta": (rb.get("score", 0) or 0) - (ra.get("score", 0) or 0),
-            "run_a_passed": 1 if ra.get("passed") else 0,
-            "run_b_passed": 1 if rb.get("passed") else 0,
-        })
+        case_comparison.append(
+            {
+                "case_id": case_id,
+                "model_id": model_id,
+                "run_a_score": ra.get("score", 0),
+                "run_b_score": rb.get("score", 0),
+                "delta": (rb.get("score", 0) or 0) - (ra.get("score", 0) or 0),
+                "run_a_passed": 1 if ra.get("passed") else 0,
+                "run_b_passed": 1 if rb.get("passed") else 0,
+            }
+        )
 
     run_a = _execution_to_run(exec_a)
     run_b = _execution_to_run(exec_b)
     return {
-        "run_a": {"id": run_a["id"], "suite_id": run_a["suite_id"], "status": run_a["status"], "started_at": run_a["started_at"]},
-        "run_b": {"id": run_b["id"], "suite_id": run_b["suite_id"], "status": run_b["status"], "started_at": run_b["started_at"]},
+        "run_a": {
+            "id": run_a["id"],
+            "suite_id": run_a["suite_id"],
+            "status": run_a["status"],
+            "started_at": run_a["started_at"],
+        },
+        "run_b": {
+            "id": run_b["id"],
+            "suite_id": run_b["suite_id"],
+            "status": run_b["status"],
+            "started_at": run_b["started_at"],
+        },
         "model_comparison": model_comparison,
         "case_comparison": case_comparison,
     }
@@ -897,7 +994,9 @@ async def api_compare(a: str, b: str):
 # --- Static files (React frontend) ---
 
 if CLIENT_DIST.exists():
-    app.mount("/assets", StaticFiles(directory=str(CLIENT_DIST / "assets")), name="assets")
+    app.mount(
+        "/assets", StaticFiles(directory=str(CLIENT_DIST / "assets")), name="assets"
+    )
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
@@ -913,8 +1012,10 @@ if CLIENT_DIST.exists():
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def main():
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
 
 

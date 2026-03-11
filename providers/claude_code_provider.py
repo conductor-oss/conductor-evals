@@ -34,7 +34,9 @@ class ClaudeCodeProvider:
             return {
                 "response": output.get("result", result.stdout),
                 "tool_calls": output.get("tool_calls", []),
-                "token_usage": output.get("usage", {"input_tokens": 0, "output_tokens": 0}),
+                "token_usage": output.get(
+                    "usage", {"input_tokens": 0, "output_tokens": 0}
+                ),
                 "latency_ms": latency_ms,
             }
         except json.JSONDecodeError:

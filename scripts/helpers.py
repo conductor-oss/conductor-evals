@@ -105,8 +105,10 @@ def load_config() -> dict:
             config = json.load(f)
     except FileNotFoundError:
         print(f"Error: Config file not found: {CONFIG_FILE}")
-        print("Set CONDUCTOR_URL and CONDUCTOR_AUTH_KEY env vars, "
-              "or create the config file from config/orkes-config.example.json")
+        print(
+            "Set CONDUCTOR_URL and CONDUCTOR_AUTH_KEY env vars, "
+            "or create the config file from config/orkes-config.example.json"
+        )
         sys.exit(1)
 
     cluster = config["clusters"][0]

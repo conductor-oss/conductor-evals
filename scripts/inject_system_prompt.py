@@ -1,4 +1,5 @@
 """Inject a system prompt from a file into eval case JSON files."""
+
 import json
 import sys
 from pathlib import Path

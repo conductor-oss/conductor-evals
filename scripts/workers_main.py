@@ -17,10 +17,10 @@ from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 
 # Import modules so @worker_task decorators register the workers
-import workers.fork_preparer
-import workers.agent_executor
-import workers.scorers
-import workers.aggregator
+import workers.fork_preparer  # noqa: F401
+import workers.agent_executor  # noqa: F401
+import workers.scorers  # noqa: F401
+import workers.aggregator  # noqa: F401
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -48,8 +48,10 @@ def main():
                 config = json.load(f)
         except FileNotFoundError:
             logger.error("Config file not found: %s", CONFIG_FILE)
-            logger.error("Set CONDUCTOR_URL, CONDUCTOR_AUTH_KEY, and CONDUCTOR_AUTH_SECRET env vars, "
-                         "or create the config file from config/orkes-config.example.json")
+            logger.error(
+                "Set CONDUCTOR_URL, CONDUCTOR_AUTH_KEY, and CONDUCTOR_AUTH_SECRET env vars, "
+                "or create the config file from config/orkes-config.example.json"
+            )
             sys.exit(1)
 
         cluster = config["clusters"][0]
@@ -65,7 +67,10 @@ def main():
 
     # If auth keys are provided, set them
     if key_id:
-        from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+        from conductor.client.configuration.settings.authentication_settings import (
+            AuthenticationSettings,
+        )
+
         configuration.authentication_settings = AuthenticationSettings(
             key_id=key_id,
             key_secret=key_secret,
@@ -76,26 +81,35 @@ def main():
     # Auto-register tasks and workflows on startup
     try:
         from scripts.register import load_config, register_tasks, register_workflows
+
         cfg = load_config()
         logger.info("Registering task definitions and workflows...")
         register_tasks(cfg)
         register_workflows(cfg)
         logger.info("Registration complete.")
     except Exception as e:
-        logger.warning("Auto-registration failed: %s. Continuing with worker startup.", e)
+        logger.warning(
+            "Auto-registration failed: %s. Continuing with worker startup.", e
+        )
 
     logger.info("Starting workers (scan_for_annotated_workers=True)...")
 
     task_handler = TaskHandler(
         configuration=configuration,
         scan_for_annotated_workers=True,
-        import_modules=["workers.fork_preparer", "workers.agent_executor", "workers.scorers", "workers.aggregator"],
+        import_modules=[
+            "workers.fork_preparer",
+            "workers.agent_executor",
+            "workers.scorers",
+            "workers.aggregator",
+        ],
     )
     task_handler.start_processes()
 
     logger.info("Workers running. Press Ctrl+C to stop.")
     try:
         import time
+
         while True:
             time.sleep(1)
     except KeyboardInterrupt:

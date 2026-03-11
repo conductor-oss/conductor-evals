@@ -67,7 +67,9 @@ def validate_case(case: dict, filename: str) -> list[str]:
     if scoring in SCORING_FIELDS:
         missing_scoring = SCORING_FIELDS[scoring] - set(case.keys())
         if missing_scoring:
-            errors.append(f"{filename}: scoring_method '{scoring}' requires fields: {missing_scoring}")
+            errors.append(
+                f"{filename}: scoring_method '{scoring}' requires fields: {missing_scoring}"
+            )
     elif scoring:
         errors.append(f"{filename}: unknown scoring_method '{scoring}'")
     return errors
@@ -101,7 +103,13 @@ def resolve_models(model_names: list[str], presets: dict) -> list[dict]:
             models.append(presets[m])
         elif ":" in m:
             provider, model_id = m.split(":", 1)
-            models.append({"provider": provider, "model_id": model_id, "params": {"max_tokens": 4096, "temperature": 0.0}})
+            models.append(
+                {
+                    "provider": provider,
+                    "model_id": model_id,
+                    "params": {"max_tokens": 4096, "temperature": 0.0},
+                }
+            )
         else:
             print(f"Unknown model: {m}. Use a preset name or provider:model_id format.")
             print(f"Available presets: {', '.join(presets.keys())}")
@@ -117,12 +125,14 @@ def resolve_models(model_names: list[str], presets: dict) -> list[dict]:
 def cmd_workers(args):
     """Start Conductor task workers."""
     from scripts.workers_main import main as workers_main
+
     workers_main()
 
 
 def cmd_server(args):
     """Start the web UI server."""
     from scripts.server_app import main as server_main
+
     server_main()
 
 
@@ -157,14 +167,18 @@ def cmd_cases(args):
     for f in sorted(suite_dir.glob("*.json")):
         try:
             data = json.loads(f.read_text())
-            cases.append({
-                "id": data.get("id", f.stem),
-                "agent_type": data.get("agent_type", ""),
-                "scoring": data.get("scoring_method", ""),
-                "skip": data.get("skip", False),
-            })
+            cases.append(
+                {
+                    "id": data.get("id", f.stem),
+                    "agent_type": data.get("agent_type", ""),
+                    "scoring": data.get("scoring_method", ""),
+                    "skip": data.get("skip", False),
+                }
+            )
         except json.JSONDecodeError:
-            cases.append({"id": f.stem, "agent_type": "?", "scoring": "?", "skip": False})
+            cases.append(
+                {"id": f.stem, "agent_type": "?", "scoring": "?", "skip": False}
+            )
     if not cases:
         print("No cases found.")
         return
@@ -175,7 +189,9 @@ def cmd_cases(args):
     print(f"{'-' * id_col}  {'-' * at_col}  {'-' * sc_col}  ----")
     for c in cases:
         skip = "yes" if c["skip"] else ""
-        print(f"{c['id']:<{id_col}}  {c['agent_type']:<{at_col}}  {c['scoring']:<{sc_col}}  {skip}")
+        print(
+            f"{c['id']:<{id_col}}  {c['agent_type']:<{at_col}}  {c['scoring']:<{sc_col}}  {skip}"
+        )
 
 
 def cmd_models(args):
@@ -187,7 +203,9 @@ def cmd_models(args):
     print(f"{'Preset':<{id_col}}  {'Provider':<{prov_col}}  {'Model ID':<{mod_col}}")
     print(f"{'-' * id_col}  {'-' * prov_col}  {'-' * mod_col}")
     for name, cfg in presets.items():
-        print(f"{name:<{id_col}}  {cfg['provider']:<{prov_col}}  {cfg['model_id']:<{mod_col}}")
+        print(
+            f"{name:<{id_col}}  {cfg['provider']:<{prov_col}}  {cfg['model_id']:<{mod_col}}"
+        )
 
 
 def cmd_run(args):
@@ -226,7 +244,11 @@ def cmd_run(args):
     if args.tags:
         eval_cases = [c for c in eval_cases if set(args.tags) & set(c.get("tags", []))]
     if args.exclude_tags:
-        eval_cases = [c for c in eval_cases if not (set(args.exclude_tags) & set(c.get("tags", [])))]
+        eval_cases = [
+            c
+            for c in eval_cases
+            if not (set(args.exclude_tags) & set(c.get("tags", [])))
+        ]
     if args.sample and args.sample < len(eval_cases):
         random.shuffle(eval_cases)
         eval_cases = eval_cases[: args.sample]
@@ -332,12 +354,14 @@ def cmd_runs(args):
     if args.output == "json":
         rows = []
         for r in results:
-            rows.append({
-                "workflow_id": r.get("workflowId", ""),
-                "suite": r.get("correlationId", ""),
-                "status": r.get("status", ""),
-                "started": r.get("startTime", ""),
-            })
+            rows.append(
+                {
+                    "workflow_id": r.get("workflowId", ""),
+                    "suite": r.get("correlationId", ""),
+                    "status": r.get("status", ""),
+                    "started": r.get("startTime", ""),
+                }
+            )
         print(json.dumps(rows, indent=2))
         return
 
@@ -346,7 +370,9 @@ def cmd_runs(args):
     print(f"{'Workflow ID':<{wf_col}}  {'Suite':<{suite_col}}  {'Status':<12}  Started")
     print(f"{'-' * wf_col}  {'-' * suite_col}  {'-' * 12}  -------")
     for r in results:
-        print(f"{r.get('workflowId', ''):<{wf_col}}  {r.get('correlationId', ''):<{suite_col}}  {r.get('status', ''):<12}  {r.get('startTime', '')}")
+        print(
+            f"{r.get('workflowId', ''):<{wf_col}}  {r.get('correlationId', ''):<{suite_col}}  {r.get('status', ''):<12}  {r.get('startTime', '')}"
+        )
 
 
 def cmd_status(args):
@@ -356,7 +382,10 @@ def cmd_status(args):
     status = execution.get("status", "UNKNOWN")
     wf_input = execution.get("input", {})
     suite_name = wf_input.get("suite_name", "")
-    models = [m.get("model_id", str(m)) if isinstance(m, dict) else str(m) for m in wf_input.get("models", [])]
+    models = [
+        m.get("model_id", str(m)) if isinstance(m, dict) else str(m)
+        for m in wf_input.get("models", [])
+    ]
 
     print(f"Run:    {args.run_id}")
     print(f"Suite:  {suite_name}")
@@ -408,14 +437,18 @@ def cmd_compare(args):
     data_a = extract_results(exec_a)
     data_b = extract_results(exec_b)
 
-    all_models = sorted(set(list(data_a["summary"].keys()) + list(data_b["summary"].keys())))
+    all_models = sorted(
+        set(list(data_a["summary"].keys()) + list(data_b["summary"].keys()))
+    )
     model_deltas = []
     for model in all_models:
         a_avg = data_a["summary"].get(model, {}).get("avg_score", 0.0)
         b_avg = data_b["summary"].get(model, {}).get("avg_score", 0.0)
         model_deltas.append((model, a_avg, b_avg, b_avg - a_avg))
 
-    all_cases = sorted(set(list(data_a["results"].keys()) + list(data_b["results"].keys())))
+    all_cases = sorted(
+        set(list(data_a["results"].keys()) + list(data_b["results"].keys()))
+    )
     case_rows = []
     for case_id in all_cases:
         r_a = data_a["results"].get(case_id, {})
@@ -434,7 +467,13 @@ def cmd_compare(args):
                 for m, a, b, d in model_deltas
             ],
             "case_comparison": [
-                {"case_id": c, "model": m, "run_a_score": sa, "run_b_score": sb, "delta": d}
+                {
+                    "case_id": c,
+                    "model": m,
+                    "run_a_score": sa,
+                    "run_b_score": sb,
+                    "delta": d,
+                }
                 for c, m, sa, sb, d in case_rows
             ],
         }
@@ -450,17 +489,25 @@ def cmd_compare(args):
         lines.append(f"{'-' * 30} {'-' * 10} {'-' * 10} {'-' * 10}")
         for model, a_avg, b_avg, delta in model_deltas:
             sign = "+" if delta > 0 else ""
-            lines.append(f"{model:<30} {a_avg:>10.3f} {b_avg:>10.3f} {sign}{delta:>9.3f}")
+            lines.append(
+                f"{model:<30} {a_avg:>10.3f} {b_avg:>10.3f} {sign}{delta:>9.3f}"
+            )
         if case_rows:
-            lines.append(f"\n{'Case':<25} {'Model':<25} {'Run A':>8} {'Run B':>8} {'Delta':>8}")
+            lines.append(
+                f"\n{'Case':<25} {'Model':<25} {'Run A':>8} {'Run B':>8} {'Delta':>8}"
+            )
             lines.append(f"{'-' * 25} {'-' * 25} {'-' * 8} {'-' * 8} {'-' * 8}")
             for case_id, model, s_a, s_b, delta in case_rows:
                 sign = "+" if delta > 0 else ""
-                lines.append(f"{case_id:<25} {model:<25} {s_a:>8.3f} {s_b:>8.3f} {sign}{delta:>7.3f}")
+                lines.append(
+                    f"{case_id:<25} {model:<25} {s_a:>8.3f} {s_b:>8.3f} {sign}{delta:>7.3f}"
+                )
         print("\n".join(lines))
 
     # Regression detection
-    regressions = [(m, d) for m, _a, _b, d in model_deltas if d < -args.regression_threshold]
+    regressions = [
+        (m, d) for m, _a, _b, d in model_deltas if d < -args.regression_threshold
+    ]
     if regressions:
         print(f"\nREGRESSION DETECTED (threshold: {args.regression_threshold:.3f})")
         for model, delta in regressions:
@@ -496,46 +543,84 @@ def _poll_workflow(cfg: dict, workflow_id: str) -> dict:
 
 def _format_results(data: dict, suite_name: str, fmt: str) -> str:
     if fmt == "json":
-        return json.dumps({
-            "run_id": data["run_id"],
-            "status": data["status"],
-            "summary": data["summary"],
-            "results": list(data["results"].values()),
-        }, indent=2)
+        return json.dumps(
+            {
+                "run_id": data["run_id"],
+                "status": data["status"],
+                "summary": data["summary"],
+                "results": list(data["results"].values()),
+            },
+            indent=2,
+        )
     if fmt == "csv":
         buf = io.StringIO()
         writer = csv.writer(buf)
         writer.writerow(["case_id", "model_id", "score", "passed", "response_preview"])
         for case_id in sorted(data["results"]):
             r = data["results"][case_id]
-            writer.writerow([case_id, r.get("model_id", ""), r.get("score", 0.0), r.get("passed", False), r.get("response_preview", "")])
+            writer.writerow(
+                [
+                    case_id,
+                    r.get("model_id", ""),
+                    r.get("score", 0.0),
+                    r.get("passed", False),
+                    r.get("response_preview", ""),
+                ]
+            )
         return buf.getvalue()
     if fmt == "markdown":
-        lines = [f"# Eval Results: {suite_name}", "", f"**Run ID:** {data['run_id']} | **Status:** {data['status']}", ""]
+        lines = [
+            f"# Eval Results: {suite_name}",
+            "",
+            f"**Run ID:** {data['run_id']} | **Status:** {data['status']}",
+            "",
+        ]
         summary = data["summary"]
         if summary:
-            lines += ["## Model Summary", "", "| Model | Avg Score | Pass Rate | Passed | Total |", "|-------|-----------|-----------|--------|-------|"]
+            lines += [
+                "## Model Summary",
+                "",
+                "| Model | Avg Score | Pass Rate | Passed | Total |",
+                "|-------|-----------|-----------|--------|-------|",
+            ]
             for mid in sorted(summary):
                 s = summary[mid]
-                lines.append(f"| {mid} | {s.get('avg_score', 0):.3f} | {s.get('pass_rate', 0) * 100:.1f}% | {s.get('passed_cases', 0)} | {s.get('total_cases', 0)} |")
+                lines.append(
+                    f"| {mid} | {s.get('avg_score', 0):.3f} | {s.get('pass_rate', 0) * 100:.1f}% | {s.get('passed_cases', 0)} | {s.get('total_cases', 0)} |"
+                )
         results = data["results"]
         if results:
-            lines += ["", "## Case Results", "", "| Case | Model | Score | Passed |", "|------|-------|-------|--------|"]
+            lines += [
+                "",
+                "## Case Results",
+                "",
+                "| Case | Model | Score | Passed |",
+                "|------|-------|-------|--------|",
+            ]
             for cid in sorted(results):
                 r = results[cid]
-                lines.append(f"| {cid} | {r.get('model_id', '?')} | {r.get('score', 0):.3f} | {'PASS' if r.get('passed') else 'FAIL'} |")
+                lines.append(
+                    f"| {cid} | {r.get('model_id', '?')} | {r.get('score', 0):.3f} | {'PASS' if r.get('passed') else 'FAIL'} |"
+                )
         return "\n".join(lines)
 
     # Default: text
-    lines = [f"Suite: {suite_name} | Run: {data['run_id']} | Status: {data['status']}", ""]
+    lines = [
+        f"Suite: {suite_name} | Run: {data['run_id']} | Status: {data['status']}",
+        "",
+    ]
     summary = data["summary"]
     if summary:
         lines.append("Model Summary")
         model_col = max(len("Model"), max(len(m) for m in summary))
-        lines.append(f"{'Model':<{model_col}}  {'Avg Score':>9}  {'Pass Rate':>9}  {'Passed':>6}  {'Total':>5}")
+        lines.append(
+            f"{'Model':<{model_col}}  {'Avg Score':>9}  {'Pass Rate':>9}  {'Passed':>6}  {'Total':>5}"
+        )
         for mid in sorted(summary):
             s = summary[mid]
-            lines.append(f"{mid:<{model_col}}  {s.get('avg_score', 0):>9.3f}  {s.get('pass_rate', 0) * 100:>8.1f}%  {s.get('passed_cases', 0):>6}  {s.get('total_cases', 0):>5}")
+            lines.append(
+                f"{mid:<{model_col}}  {s.get('avg_score', 0):>9.3f}  {s.get('pass_rate', 0) * 100:>8.1f}%  {s.get('passed_cases', 0):>6}  {s.get('total_cases', 0):>5}"
+            )
     results = data["results"]
     if results:
         lines.append("")
@@ -543,10 +628,14 @@ def _format_results(data: dict, suite_name: str, fmt: str) -> str:
         case_col = max(len("Case"), max(len(c) for c in results))
         model_ids = sorted({r.get("model_id", "?") for r in results.values()})
         model_col = max(len("Model"), max(len(m) for m in model_ids))
-        lines.append(f"{'Case':<{case_col}}  {'Model':<{model_col}}  {'Score':>5}  {'Passed':<6}")
+        lines.append(
+            f"{'Case':<{case_col}}  {'Model':<{model_col}}  {'Score':>5}  {'Passed':<6}"
+        )
         for cid in sorted(results):
             r = results[cid]
-            lines.append(f"{cid:<{case_col}}  {r.get('model_id', '?'):<{model_col}}  {r.get('score', 0):>5.3f}  {'PASS' if r.get('passed') else 'FAIL':<6}")
+            lines.append(
+                f"{cid:<{case_col}}  {r.get('model_id', '?'):<{model_col}}  {r.get('score', 0):>5.3f}  {'PASS' if r.get('passed') else 'FAIL':<6}"
+            )
     return "\n".join(lines)
 
 
@@ -556,7 +645,9 @@ def _format_results(data: dict, suite_name: str, fmt: str) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="conductor-eval", description="Conductor Evals CLI")
+    parser = argparse.ArgumentParser(
+        prog="conductor-eval", description="Conductor Evals CLI"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     # workers
@@ -578,26 +669,46 @@ def main():
     # run
     p_run = sub.add_parser("run", help="Run an eval suite")
     p_run.add_argument("suite", help="Suite name or path")
-    p_run.add_argument("--models", required=True, nargs="+", help="Model presets or provider:model_id")
+    p_run.add_argument(
+        "--models", required=True, nargs="+", help="Model presets or provider:model_id"
+    )
     p_run.add_argument("--run-id", default=None, help="Custom run ID")
     p_run.add_argument("--dry-run", action="store_true", help="Don't call LLMs")
-    p_run.add_argument("--wait", action="store_true", help="Wait for completion and show results")
-    p_run.add_argument("--output", "-o", choices=["text", "markdown", "json", "csv"], default="text", help="Output format (with --wait)")
+    p_run.add_argument(
+        "--wait", action="store_true", help="Wait for completion and show results"
+    )
+    p_run.add_argument(
+        "--output",
+        "-o",
+        choices=["text", "markdown", "json", "csv"],
+        default="text",
+        help="Output format (with --wait)",
+    )
     p_run.add_argument("--tags", nargs="+", help="Only run cases with these tags")
-    p_run.add_argument("--exclude-tags", nargs="+", help="Exclude cases with these tags")
+    p_run.add_argument(
+        "--exclude-tags", nargs="+", help="Exclude cases with these tags"
+    )
     p_run.add_argument("--sample", type=int, help="Randomly sample N cases")
-    p_run.add_argument("--threshold", type=float, help="Min pass rate (0-1). Exit 1 if below. Requires --wait")
+    p_run.add_argument(
+        "--threshold",
+        type=float,
+        help="Min pass rate (0-1). Exit 1 if below. Requires --wait",
+    )
 
     # runs
     p_runs = sub.add_parser("runs", help="List past runs")
     p_runs.add_argument("--suite", default=None, help="Filter by suite")
-    p_runs.add_argument("--limit", type=int, default=20, help="Max results (default: 20)")
+    p_runs.add_argument(
+        "--limit", type=int, default=20, help="Max results (default: 20)"
+    )
     p_runs.add_argument("--output", "-o", choices=["text", "json"], default="text")
 
     # status
     p_status = sub.add_parser("status", help="Show run status and results")
     p_status.add_argument("run_id", help="Workflow ID")
-    p_status.add_argument("--output", "-o", choices=["text", "markdown", "json", "csv"], default="text")
+    p_status.add_argument(
+        "--output", "-o", choices=["text", "markdown", "json", "csv"], default="text"
+    )
 
     # cancel
     p_cancel = sub.add_parser("cancel", help="Cancel a running eval")
@@ -607,7 +718,9 @@ def main():
     p_compare = sub.add_parser("compare", help="Compare two runs")
     p_compare.add_argument("run_a", help="Workflow ID of run A")
     p_compare.add_argument("run_b", help="Workflow ID of run B")
-    p_compare.add_argument("--regression-threshold", type=float, default=0.0, help="Max allowed score drop")
+    p_compare.add_argument(
+        "--regression-threshold", type=float, default=0.0, help="Max allowed score drop"
+    )
     p_compare.add_argument("--output", "-o", choices=["text", "json"], default="text")
 
     args = parser.parse_args()

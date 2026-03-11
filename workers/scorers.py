@@ -6,7 +6,7 @@ from conductor.client.worker.worker_task import worker_task
 logger = logging.getLogger(__name__)
 
 
-@worker_task(task_definition_name='score_text_match')
+@worker_task(task_definition_name="score_text_match")
 def score_text_match(agent_output: str, expected: dict, match_mode: str) -> dict:
     agent_output = str(agent_output or "")
     expected = expected or {}
@@ -51,7 +51,7 @@ def score_text_match(agent_output: str, expected: dict, match_mode: str) -> dict
     return {"score": score, "passed": passed, "details": details}
 
 
-@worker_task(task_definition_name='parse_judge_output')
+@worker_task(task_definition_name="parse_judge_output")
 def parse_judge_output(judge_result: str) -> dict:
     """Parse the JSON output from the LLM_CHAT_COMPLETE judge system task.
 
@@ -60,10 +60,17 @@ def parse_judge_output(judge_result: str) -> dict:
     """
     if not judge_result:
         logger.warning("No judge output received")
-        return {"score": 0.0, "raw_score": 0, "passed": False, "reasoning": "No judge output"}
+        return {
+            "score": 0.0,
+            "raw_score": 0,
+            "passed": False,
+            "reasoning": "No judge output",
+        }
 
     try:
-        result = json.loads(judge_result) if isinstance(judge_result, str) else judge_result
+        result = (
+            json.loads(judge_result) if isinstance(judge_result, str) else judge_result
+        )
         raw_score = result.get("score", 1)
         reasoning = result.get("reasoning", "")
     except (json.JSONDecodeError, TypeError):
@@ -83,14 +90,23 @@ def parse_judge_output(judge_result: str) -> dict:
     }
 
 
-@worker_task(task_definition_name='score_tool_trace')
-def score_tool_trace(tool_calls: object, expected_trace: object,
-                     strict_order: bool = True) -> dict:
+@worker_task(task_definition_name="score_tool_trace")
+def score_tool_trace(
+    tool_calls: object, expected_trace: object, strict_order: bool = True
+) -> dict:
     if not expected_trace:
-        return {"score": 1.0, "passed": True, "missing": [], "extra": [], "details": "No trace expected"}
+        return {
+            "score": 1.0,
+            "passed": True,
+            "missing": [],
+            "extra": [],
+            "details": "No trace expected",
+        }
 
     tool_calls = tool_calls if isinstance(tool_calls, list) else []
-    actual_calls = [{"tool_name": tc["tool_name"], "args": tc.get("args", {})} for tc in tool_calls]
+    actual_calls = [
+        {"tool_name": tc["tool_name"], "args": tc.get("args", {})} for tc in tool_calls
+    ]
     missing = []
     matched = []
 

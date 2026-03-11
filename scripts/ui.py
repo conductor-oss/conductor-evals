@@ -15,8 +15,12 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Launch the Eval UI web server")
-    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"Port (default: {DEFAULT_PORT})")
-    parser.add_argument("--no-open", action="store_true", help="Don't open browser automatically")
+    parser.add_argument(
+        "--port", type=int, default=DEFAULT_PORT, help=f"Port (default: {DEFAULT_PORT})"
+    )
+    parser.add_argument(
+        "--no-open", action="store_true", help="Don't open browser automatically"
+    )
     args = parser.parse_args()
 
     # Check Node.js is installed
@@ -52,14 +56,19 @@ def main():
             capture_output=False,
         )
         if result.returncode != 0:
-            print("Warning: Frontend build failed. Server will start without static files.")
-            print("Run 'cd ui && npx vite build' to build manually, or use Vite dev server on port 5173.")
+            print(
+                "Warning: Frontend build failed. Server will start without static files."
+            )
+            print(
+                "Run 'cd ui && npx vite build' to build manually, or use Vite dev server on port 5173."
+            )
 
     url = f"http://localhost:{args.port}"
 
     if not args.no_open:
         # Open browser after a short delay (server needs time to start)
         import threading
+
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
 
     print(f"Starting Eval UI at {url}")

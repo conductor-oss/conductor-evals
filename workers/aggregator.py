@@ -4,11 +4,17 @@ from conductor.client.worker.worker_task import worker_task
 logger = logging.getLogger(__name__)
 
 
-@worker_task(task_definition_name='record_result')
-def record_result(case_id: str, model: dict, run_id: str,
-                  agent_output: dict, scoring_method: str = "",
-                  text_match_result: dict = None, llm_judge_result: dict = None,
-                  tool_trace_result: dict = None) -> dict:
+@worker_task(task_definition_name="record_result")
+def record_result(
+    case_id: str,
+    model: dict,
+    run_id: str,
+    agent_output: dict,
+    scoring_method: str = "",
+    text_match_result: dict = None,
+    llm_judge_result: dict = None,
+    tool_trace_result: dict = None,
+) -> dict:
     # Pick the scorer result based on which SWITCH branch ran
     scoring_details = text_match_result or llm_judge_result or tool_trace_result or {}
     score = scoring_details.get("score", 0.0) if scoring_details else 0.0
@@ -29,8 +35,10 @@ def record_result(case_id: str, model: dict, run_id: str,
     }
 
 
-@worker_task(task_definition_name='aggregate_results')
-def aggregate_results(results: dict, suite_name: str, models: object, run_id: str) -> dict:
+@worker_task(task_definition_name="aggregate_results")
+def aggregate_results(
+    results: dict, suite_name: str, models: object, run_id: str
+) -> dict:
     # results comes from JOIN — it's a dict of taskRefName → sub-workflow output
     all_results = []
     failed_cases = 0

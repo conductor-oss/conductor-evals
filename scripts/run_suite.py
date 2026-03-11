@@ -44,7 +44,9 @@ def validate_case(case: dict, filename: str) -> list[str]:
     if scoring in SCORING_FIELDS:
         missing_scoring = SCORING_FIELDS[scoring] - set(case.keys())
         if missing_scoring:
-            errors.append(f"{filename}: scoring_method '{scoring}' requires fields: {missing_scoring}")
+            errors.append(
+                f"{filename}: scoring_method '{scoring}' requires fields: {missing_scoring}"
+            )
     elif scoring:
         errors.append(f"{filename}: unknown scoring_method '{scoring}'")
 
@@ -126,7 +128,9 @@ def poll_workflow(cfg: dict, workflow_id: str) -> dict:
 def format_text(data: dict, suite_name: str) -> str:
     """Format results as plain text tables."""
     lines = []
-    lines.append(f"Suite: {suite_name} | Run: {data['run_id']} | Status: {data['status']}")
+    lines.append(
+        f"Suite: {suite_name} | Run: {data['run_id']} | Status: {data['status']}"
+    )
     lines.append("")
 
     # Model summary
@@ -155,7 +159,9 @@ def format_text(data: dict, suite_name: str) -> str:
         case_col = max(len("Case"), max((len(c) for c in results), default=4))
         model_ids = sorted({r.get("model_id", "?") for r in results.values()})
         model_col = max(len("Model"), max((len(m) for m in model_ids), default=5))
-        header = f"{'Case':<{case_col}}  {'Model':<{model_col}}  {'Score':>5}  {'Passed':<6}"
+        header = (
+            f"{'Case':<{case_col}}  {'Model':<{model_col}}  {'Score':>5}  {'Passed':<6}"
+        )
         lines.append(header)
 
         for case_id in sorted(results):
@@ -163,7 +169,9 @@ def format_text(data: dict, suite_name: str) -> str:
             model = r.get("model_id", "?")
             score = r.get("score", 0.0)
             passed = "PASS" if r.get("passed") else "FAIL"
-            lines.append(f"{case_id:<{case_col}}  {model:<{model_col}}  {score:>5.3f}  {passed:<6}")
+            lines.append(
+                f"{case_id:<{case_col}}  {model:<{model_col}}  {score:>5.3f}  {passed:<6}"
+            )
 
     return "\n".join(lines)
 
@@ -190,7 +198,9 @@ def format_markdown(data: dict, suite_name: str) -> str:
             rate = s.get("pass_rate", 0.0)
             passed = s.get("passed_cases", 0)
             total = s.get("total_cases", 0)
-            lines.append(f"| {model_id} | {avg:.3f} | {rate:.1f}% | {passed} | {total} |")
+            lines.append(
+                f"| {model_id} | {avg:.3f} | {rate:.1f}% | {passed} | {total} |"
+            )
 
     # Case results
     results = data["results"]
@@ -230,13 +240,15 @@ def format_csv(data: dict) -> str:
 
     for case_id in sorted(data["results"]):
         r = data["results"][case_id]
-        writer.writerow([
-            case_id,
-            r.get("model_id", ""),
-            r.get("score", 0.0),
-            r.get("passed", False),
-            r.get("response_preview", ""),
-        ])
+        writer.writerow(
+            [
+                case_id,
+                r.get("model_id", ""),
+                r.get("score", 0.0),
+                r.get("passed", False),
+                r.get("response_preview", ""),
+            ]
+        )
 
     return buf.getvalue()
 
@@ -251,18 +263,49 @@ FORMATTERS = {
 
 def main():
     parser = argparse.ArgumentParser(description="Run an eval suite")
-    parser.add_argument("--suite", required=True, help="Eval suite name or path to eval directory")
-    parser.add_argument("--models", required=True, nargs="+",
-                        help=f"Model presets ({list(MODEL_PRESETS.keys())}) or provider:model_id")
-    parser.add_argument("--run-id", default=None, help="Custom run ID (auto-generated if omitted)")
-    parser.add_argument("--dry-run", action="store_true", help="Don't call LLMs, use placeholder responses")
-    parser.add_argument("--wait", action="store_true", help="Poll until workflow completes, then display results")
-    parser.add_argument("--output", "-o", choices=["text", "markdown", "json", "csv"],
-                        default="text", help="Output format when using --wait (default: text)")
-    parser.add_argument("--tags", nargs="+", help="Only run cases matching any of these tags")
-    parser.add_argument("--exclude-tags", nargs="+", help="Exclude cases matching any of these tags")
-    parser.add_argument("--sample", type=int, help="Randomly sample N cases from the suite")
-    parser.add_argument("--threshold", type=float, help="Minimum pass rate (0.0-1.0). Exit non-zero if below. Requires --wait")
+    parser.add_argument(
+        "--suite", required=True, help="Eval suite name or path to eval directory"
+    )
+    parser.add_argument(
+        "--models",
+        required=True,
+        nargs="+",
+        help=f"Model presets ({list(MODEL_PRESETS.keys())}) or provider:model_id",
+    )
+    parser.add_argument(
+        "--run-id", default=None, help="Custom run ID (auto-generated if omitted)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Don't call LLMs, use placeholder responses",
+    )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Poll until workflow completes, then display results",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        choices=["text", "markdown", "json", "csv"],
+        default="text",
+        help="Output format when using --wait (default: text)",
+    )
+    parser.add_argument(
+        "--tags", nargs="+", help="Only run cases matching any of these tags"
+    )
+    parser.add_argument(
+        "--exclude-tags", nargs="+", help="Exclude cases matching any of these tags"
+    )
+    parser.add_argument(
+        "--sample", type=int, help="Randomly sample N cases from the suite"
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Minimum pass rate (0.0-1.0). Exit non-zero if below. Requires --wait",
+    )
     args = parser.parse_args()
 
     if args.threshold is not None and not args.wait:
@@ -303,12 +346,16 @@ def main():
     if args.tags:
         eval_cases = [c for c in eval_cases if set(args.tags) & set(c.get("tags", []))]
     if args.exclude_tags:
-        eval_cases = [c for c in eval_cases if not (set(args.exclude_tags) & set(c.get("tags", [])))]
+        eval_cases = [
+            c
+            for c in eval_cases
+            if not (set(args.exclude_tags) & set(c.get("tags", [])))
+        ]
 
     # Random sampling
     if args.sample and args.sample < len(eval_cases):
         random.shuffle(eval_cases)
-        eval_cases = eval_cases[:args.sample]
+        eval_cases = eval_cases[: args.sample]
 
     if not eval_cases:
         print("Error: No eval cases remaining after filtering")
@@ -318,9 +365,15 @@ def main():
     for m in args.models:
         if m in MODEL_PRESETS:
             models.append(MODEL_PRESETS[m])
-        elif ':' in m:
-            provider, model_id = m.split(':', 1)
-            models.append({"provider": provider, "model_id": model_id, "params": {"max_tokens": 4096, "temperature": 0.0}})
+        elif ":" in m:
+            provider, model_id = m.split(":", 1)
+            models.append(
+                {
+                    "provider": provider,
+                    "model_id": model_id,
+                    "params": {"max_tokens": 4096, "temperature": 0.0},
+                }
+            )
         else:
             print(f"Unknown model: {m}. Use a preset name or provider:model_id format.")
             sys.exit(1)
@@ -339,7 +392,9 @@ def main():
     print(f"Starting eval suite: {suite_name}")
     print(f"Run ID: {run_id}")
     if filtered_count > 0:
-        print(f"Eval cases: {len(eval_cases)} loaded ({total_loaded} total, {filtered_count} filtered out)")
+        print(
+            f"Eval cases: {len(eval_cases)} loaded ({total_loaded} total, {filtered_count} filtered out)"
+        )
     else:
         print(f"Eval cases: {len(eval_cases)} loaded from {suite_dir}")
     print(f"Models: {[m['model_id'] for m in models]}")
@@ -388,10 +443,14 @@ def main():
                 total_cases = sum(s.get("total_cases", 0) for s in summary.values())
                 overall_pass_rate = total_passed / total_cases if total_cases else 0.0
                 if overall_pass_rate < args.threshold:
-                    print(f"\nThreshold check FAILED: pass rate {overall_pass_rate:.1%} < threshold {args.threshold:.1%}")
+                    print(
+                        f"\nThreshold check FAILED: pass rate {overall_pass_rate:.1%} < threshold {args.threshold:.1%}"
+                    )
                     sys.exit(1)
                 else:
-                    print(f"\nThreshold check passed: pass rate {overall_pass_rate:.1%} >= threshold {args.threshold:.1%}")
+                    print(
+                        f"\nThreshold check passed: pass rate {overall_pass_rate:.1%} >= threshold {args.threshold:.1%}"
+                    )
 
 
 if __name__ == "__main__":
